@@ -281,7 +281,7 @@ public class EventServiceImpl implements EventService {
 
         List<ViewStatsDto> stats = statsClient.getStats(
                 event.getPublishedOn() != null ? event.getPublishedOn() : event.getCreatedOn(),
-                LocalDateTime.now(),
+                LocalDateTime.now().plusSeconds(1),
                 List.of(request.getRequestURI()),
                 true
         );

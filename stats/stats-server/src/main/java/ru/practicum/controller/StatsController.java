@@ -46,7 +46,7 @@ public class StatsController {
      * @param end    дата и время конца диапазона за который нужно выгрузить статистику
      * @param uris   список uri для которых нужно выгрузить статистику
      * @param unique учитывать только уникальные посещения (только с уникальным ip)
-     * @return Collection<StatsDto> список с результатом выборки
+     * @return Collection<ViewStatsDto> список с результатом выборки
      */
     @GetMapping("/stats")
     public ResponseEntity<List<ViewStatsDto>> getStats(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start,
