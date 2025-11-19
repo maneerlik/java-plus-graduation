@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: discovery-server
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    registerWithEureka: false   # отключает автоматическую регистрацию приложения в сервисе discovery как сервиса
+    fetchRegistry: false
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+server:
+  port: 8761
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # Включает все эндпоинты Actuator (в т.ч. gateway, health, metrics и т.д.)
+  endpoint:
+    health:
+      enabled: true   # Явно включает эндпоинт /actuator/health (по умолчанию true, но лучше указать)

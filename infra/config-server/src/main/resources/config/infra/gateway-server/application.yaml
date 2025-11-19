@@ -1,0 +1,38 @@
+spring:
+  cloud:
+    gateway:
+      discovery.locator.enabled: true     # Gateway для своей работы должен использовать Discovery Service
+
+      routes:
+        - id: main_service_route          # Идентификатор роута
+          uri: lb://main-service          # Путь, куда роут будет перенаправлять запрос. Префикс lb означает, что Gateway
+                                          # с помощью DiscoveryClient и встроенного балансировщика нагрузки найдёт
+                                          # экземпляр сервиса с идентификатором main-service. Можно не использовать lb,
+                                          # а сразу указать конкретный адрес сервиса н.п.: http://localhost:8081
+          predicates:
+            - Path=/**                    # Условия, по которым определяется, должен ли роут обрабатывать запрос. Лямбда
+                                          # типа 'предикат' (у которой один входной аргумент, а возвращает она true или false)
+                                          # https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/#gateway-request-predicates-factories
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"      # Включает все эндпоинты Actuator (в т.ч. gateway, health, metrics и т.д.)
+  endpoint:
+    gateway:
+      enabled: true       # Явно включает эндпоинт /actuator/gateway (по умолчанию true, но лучше указать)
+
+server:
+  port: 8080              # Конкретный порт (не 0), чтобы пользователи всегда могли обращаться к Gateway
+                          # по одному и тому же адресу
+
+logging:
+  level:
+    org.springframework.orm.jpa: INFO
+    org.springframework.transaction: INFO
+    org.springframework.transaction.interceptor: TRACE
+    org.springframework.orm.jpa.JpaTransactionManager: DEBUG
+    org.hibernate.sql: DEBUG
+    org.hibernate.type: TRACE
+    org.hibernate.orm.jdbc.bind: TRACE

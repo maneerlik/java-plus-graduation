@@ -1,14 +1,50 @@
 services:
-  stats-server:
-    ports:
-      - "9090:9090"
 
-  stats-db:
+  # 0. DBs
+  db:
     image: postgres:16.1
-
-  ewm-service:
+    container_name: explore-with-me-db
     ports:
-      - "8080:8080"
+      - "5432:5432"
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data/
+      - ./initdb:/docker-entrypoint-initdb.d   # пробросить путь на хосте (./initdb): в фиксированную директорию внутри контейнера, которую официальный образ PostgreSQL автоматически обрабатывает при первом запуске
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Europe/Moscow                        # устанавливает системный часовой пояс внутри контейнера
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    profiles: [ "main" ]
 
-  ewm-db:
-    image: postgres:16.1
+  # 1. Discovery Server (Eureka)
+  discovery-server:
+    image: discovery-server:latest        # имя образа, который будет создан или использован. Если есть build, образ собирается локально, а не скачивается из Docker Hub. C тегом :latest
+    build:
+      context: ./infra/discovery-server   # где искать исходники: в пакете ./infra/discovery-server
+      dockerfile: Dockerfile              # как собирать образ: используя файл Dockerfile, в этой папке
+    ports:
+      - "8761:8761"                       # пробросить порт (порт на компьютере (localhost):порт внутри контейнера)
+      - "5005:5005"                       # порт для дебага
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:                          # переменные окружения внутри контейнера
+                                          # > - все строки ниже объединить в одну строку с пробелами вместо переносов
+                                          # -agentlib:jdwp - настройка удалённой отладки Java (JDWP - Java Debug Wire Protocol).
+                                          # Позволяет подключить IDE к работающему контейнеру и ставить breakpoints, как будто
+                                          # приложение запущено локально.
+                                          # -Duser.timezone - устанавливает часовой пояс по умолчанию для всего приложения
+      JAVA_OPTS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
+        -Duser.timezone=Europe/Moscow
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s                       # проверять каждые 10 секунд
+      timeout: 5s                         # ждать ответа не дольше 5 секунд
+      retries: 3                          # сделать до 3 попыток, прежде чем считать сервис "нездоровым"
+    restart: unless-stopped               # перезапускать, если контейнер не был остановлен вручную
+    profiles: ["main"]                    # запуск по профилю 'docker compose --profile main up -d'
