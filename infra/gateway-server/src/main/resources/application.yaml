@@ -1,8 +1,8 @@
 spring:
   application:
-    name: main-service
+    name: gateway-server
   config:
-    import: "configserver:"     # включает функ-ть Spring Cloud Config Client, указывает, что источником конф-и должен быть сервер конф-й Spring Cloud Config
+    import: "configserver:"
 
   cloud:
     config:

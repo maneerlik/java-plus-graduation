@@ -1,39 +1,23 @@
 spring:
   application:
     name: stats-server
+  config:
+    import: "configserver:"     # включает функ-ть Spring Cloud Config Client, указывает, что источником конф-и должен быть сервер конф-й Spring Cloud Config
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/stats
-    username: dbuser
-    password: "12345"               # пароль в кавычках, особенно если содержит спецсимволы
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-timeout: 30000     # таймаут соединения
-      maximum-pool-size: 10         # максимальный размер пула соединений
+  cloud:
+    config:
+      discovery:
+        enabled: true           # клиент должен использовать службу обнаружения (Eureka) для поиска сервера конфигураци
+        serviceId: config-server
+      fail-fast: true           # если сервер конфигурации недоступен, сразу "падать"
+      retry:
+        useRandomPolicy: true   # для повторных попыток использовать стратегию random exponential backoff. Каждая последующая попытка переподключения совершается через всё больший случайный интервал времени
+        max-interval: 6000      # максимально возможный интервал между попытками подключения
 
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: none                # отключает любые автоматические действия со стороны Hibernate
-    properties:
-      hibernate:
-        show_sql: true              # включить вывод SQL-запросов, генерируемых Hibernate, в логи приложения
-        format_sql: true            # форматирует выводимый SQL перед тем, как он попадает в логи
-
-  liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-
-server:
-  port: 9090
-
-logging:
-  level:
-    org.springframework.orm.jpa: INFO
-    org.springframework.transaction: INFO
-    org.springframework.transaction.interceptor: TRACE
-    org.springframework.orm.jpa.JpaTransactionManager: DEBUG
-    org.hibernate.sql: DEBUG
-    org.hibernate.type: TRACE
-    org.hibernate.orm.jdbc.bind: TRACE
-    liquibase: DEBUG
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname:localhost}:${eureka.instance.port:8761}/eureka/  # куда клиент должен регистрироваться и откуда получать информацию о других сервисах
+  instance:
+    preferIpAddress: true   # вместо hostname при регистрации в Eureka следует использовать IP-адрес машины. В облачных или контейнерных средах (н.п. Docker, Kubernetes) IP - более надёжный идентификатор
+    instance-id: "${spring.application.name}:${random.value}"   # уникальный идентификатор экземпляра сервиса в Eureka. По умолчанию Eureka использует hostname + port, но это может привести к конфликтам при запуске нескольких экземпляров на одной машине
