@@ -17,6 +17,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 10
+    networks:
+      - app-network
     profiles: [ "main" ]
 
   # 1. Discovery Server (Eureka)
@@ -27,18 +29,11 @@ services:
       dockerfile: Dockerfile              # как собирать образ: используя файл Dockerfile, в этой папке
     ports:
       - "8761:8761"                       # пробросить порт (порт на компьютере (localhost):порт внутри контейнера)
-      - "5005:5005"                       # порт для дебага
     depends_on:
       db:
         condition: service_healthy
-    environment:                          # переменные окружения внутри контейнера
-                                          # > - все строки ниже объединить в одну строку с пробелами вместо переносов
-                                          # -agentlib:jdwp - настройка удалённой отладки Java (JDWP - Java Debug Wire Protocol).
-                                          # Позволяет подключить IDE к работающему контейнеру и ставить breakpoints, как будто
-                                          # приложение запущено локально.
-                                          # -Duser.timezone - устанавливает часовой пояс по умолчанию для всего приложения
+    environment:
       JAVA_OPTS: >
-        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
         -Duser.timezone=Europe/Moscow
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
@@ -46,4 +41,121 @@ services:
       timeout: 5s                         # ждать ответа не дольше 5 секунд
       retries: 3                          # сделать до 3 попыток, прежде чем считать сервис "нездоровым"
     restart: unless-stopped               # перезапускать, если контейнер не был остановлен вручную
-    profiles: ["main"]                    # запуск по профилю 'docker compose --profile main up -d'
+    networks:
+      - app-network                       # контейнер должен быть подключен к с именем app-network
+    profiles: [ "main" ]                  # запуск по профилю 'docker compose --profile main up -d'
+
+  # 2. Config Server
+  config-server:
+    image: config-server:latest
+    build:
+      context: ./infra/config-server
+      dockerfile: Dockerfile
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    environment:
+      JAVA_OPTS: >
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles: [ "main" ]
+
+  # 3. Main Service
+  main-service:
+    image: main-service:latest
+    deploy:
+      restart_policy:
+        condition: on-failure             # перезапускать контейнер только если он завершился с ненулевым кодом (упал с ошибкой)
+        delay: 5s                         # ждать 5 секунд перед попыткой перезапуска
+        max_attempts: 3                   # максимум 3 попытки перезапуска
+        window: 120s                      # временное окно, в течение которого считаются попытки. Если за 120 секунд было 3 падения, Docker перестанет пытаться перезапускать контейнер
+    build:
+      context: ./core/main-service
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5005"                       # порт для дебага
+    depends_on:
+      db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:                          # переменные окружения внутри контейнера
+                                          # > - все строки ниже объединить в одну строку с пробелами вместо переносов
+                                          # -agentlib:jdwp - настройка удалённой отладки Java (JDWP - Java Debug Wire Protocol).
+                                          # Позволяет подключить IDE к работающему контейнеру и ставить breakpoints, как будто
+                                          # приложение запущено локально.
+                                          # -Duser.timezone - устанавливает часовой пояс по умолчанию для всего приложения
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles: [ "main" ]
+
+  # 4. Stats Server
+  stats-server:
+    image: stats-server:latest
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    build:
+      context: ./stats/stats-server
+      dockerfile: Dockerfile
+    ports:
+      - "5006:5005"                       # порт для дебага
+    depends_on:
+      db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles: [ "main" ]
+
+  # 5. Gateway Server
+  gateway-server:
+    image: gateway-server:latest
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    build:
+      context: ./infra/gateway-server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:
+      JAVA_OPTS: >
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles: [ "main" ]
+
+networks:
+  app-network:
+    driver: bridge                        # объявляет внутреннюю сеть, чтобы контейнеры могли общяться между собой по имени сервиса (как по hostname) н.п. http://db:5432
