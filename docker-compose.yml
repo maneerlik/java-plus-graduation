@@ -19,7 +19,9 @@ services:
       retries: 10
     networks:
       - app-network
-    profiles: [ "main" ]
+    profiles:
+      - default
+      - docker
 
   # 1. Discovery Server (Eureka)
   discovery-server:
@@ -43,7 +45,9 @@ services:
     restart: unless-stopped               # перезапускать, если контейнер не был остановлен вручную
     networks:
       - app-network                       # контейнер должен быть подключен к с именем app-network
-    profiles: [ "main" ]                  # запуск по профилю 'docker compose --profile main up -d'
+    profiles:                             # запуск по профилю 'docker compose --profile default up -d'
+      - default                           # дефолтный профиль db и discovery остальное запускается на руках (для прямого обращения чз localhost:port - для отладки)
+      - docker                            # профиль для запуска в docker
 
   # 2. Config Server
   config-server:
@@ -60,7 +64,8 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     networks:
       - app-network
-    profiles: [ "main" ]
+    profiles:
+      - docker
 
   # 3. Main Service
   main-service:
@@ -89,6 +94,38 @@ services:
                                           # Позволяет подключить IDE к работающему контейнеру и ставить breakpoints, как будто
                                           # приложение запущено локально.
                                           # -Duser.timezone - устанавливает часовой пояс по умолчанию для всего приложения
+      SPRING_PROFILES_ACTIVE: docker      # пометить, чтобы Spring Boot использовал конфиг 'docker' н.п. main-service-docker.yml
+      JAVA_OPTS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles:
+      - docker
+
+  # 4. User Service
+  user-service:
+    image: user-service:latest
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    build:
+      context: ./core/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "5007:5005"                       # порт для дебага
+    depends_on:
+      db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:
       SPRING_PROFILES_ACTIVE: docker
       JAVA_OPTS: >
         -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
@@ -96,9 +133,10 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     networks:
       - app-network
-    profiles: [ "main" ]
+    profiles:
+      - docker
 
-  # 4. Stats Server
+  # 5. Stats Server
   stats-server:
     image: stats-server:latest
     deploy:
@@ -127,9 +165,10 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     networks:
       - app-network
-    profiles: [ "main" ]
+    profiles:
+      - docker
 
-  # 5. Gateway Server
+  # 6. Gateway Server
   gateway-server:
     image: gateway-server:latest
     deploy:
@@ -154,7 +193,8 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     networks:
       - app-network
-    profiles: [ "main" ]
+    profiles:
+      - docker
 
 networks:
   app-network:

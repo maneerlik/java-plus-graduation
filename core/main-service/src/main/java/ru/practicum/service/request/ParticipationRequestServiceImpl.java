@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.contract.UserClient;
 import ru.practicum.dto.request.EventRequestStatusUpdateRequest;
 import ru.practicum.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.dto.request.ParticipationRequestDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.enums.EventState;
 import ru.practicum.enums.RequestStatus;
 import ru.practicum.exception.ConflictException;
@@ -14,14 +16,13 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.mapper.ParticipationRequestMapper;
 import ru.practicum.model.Event;
 import ru.practicum.model.ParticipationRequest;
-import ru.practicum.model.User;
 import ru.practicum.repository.EventRepository;
 import ru.practicum.repository.ParticipationRequestRepository;
-import ru.practicum.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
 
     private final ParticipationRequestRepository requestRepository;
-    private final UserRepository userRepository;
+    private final UserClient userClient;
     private final EventRepository eventRepository;
 
     @Override
@@ -39,13 +40,12 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         log.info("Пользователь id={} создает запрос на участие в событии id={}", userId, eventId);
 
-        User user = getUser(userId);
         Event event = getEvent(eventId);
 
-        if (requestRepository.existsByEventIdAndRequesterId(eventId, userId)) {
+        if (requestRepository.existsByEventIdAndRequester(eventId, userId)) {
             throw new ConflictException("Запрос от пользователя " + userId + " на событие " + eventId + " уже существует.");
         }
-        if (event.getInitiator().getId().equals(userId)) {
+        if (event.getInitiator().equals(userId)) {
             throw new ConflictException("Инициатор не может подавать заявку на собственное событие.");
         }
         if (event.getState() != EventState.PUBLISHED) {
@@ -60,7 +60,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         }
 
         ParticipationRequest request = ParticipationRequest.builder()
-                .requester(user)
+                .requester(userId)
                 .event(event)
                 .created(LocalDateTime.now())
                 .build();
@@ -80,7 +80,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         log.info("Пользователь id={} обновляет статусы заявок {} для события id={}", userId, statusUpdateRequest.getRequestIds(), eventId);
 
         Event event = getEvent(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiator().equals(userId)) {
             throw new ConflictException("Только инициатор события может обновлять статусы заявок.");
         }
 
@@ -148,15 +148,15 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
         log.info("Получение всех заявок на участие для пользователя id={}", userId);
-        getUser(userId);
-        return toDtoList(requestRepository.findAllByRequesterId(userId));
+        getUserDto(userId);
+        return toDtoList(requestRepository.findAllByRequester(userId));
     }
 
     @Override
     public List<ParticipationRequestDto> getRequestsByOwner(Long userId, Long eventId) {
         log.info("Владелец id={} получает заявки для своего события id={}", userId, eventId);
         Event event = getEvent(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiator().equals(userId)) {
             throw new ConflictException("Пользователь " + userId + " не является инициатором события " + eventId);
         }
         return toDtoList(requestRepository.findAllByEventId(eventId));
@@ -166,7 +166,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         log.info("Пользователь id={} отменяет свой запрос id={}", userId, requestId);
-        ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId)
+        ParticipationRequest request = requestRepository.findByIdAndRequester(requestId, userId)
                 .orElseThrow(() -> new NotFoundException("Запрос с id=" + requestId + " от пользователя " + userId + " не найден."));
 
         if (request.getStatus() == RequestStatus.CONFIRMED) {
@@ -182,8 +182,8 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено."));
     }
 
-    private User getUser(Long userId) {
-        return userRepository.findById(userId)
+    private UserDto getUserDto(Long userId) {
+        return findUserById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден."));
     }
 
@@ -194,5 +194,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         return requests.stream()
                 .map(ParticipationRequestMapper::toParticipationRequestDto)
                 .collect(Collectors.toList());
+    }
+
+    private Optional<UserDto> findUserById(Long userId) {
+        List<UserDto> userDtos = userClient.getUsers(List.of(userId));
+        return userDtos.isEmpty() ? Optional.empty() : Optional.of(userDtos.getFirst());
     }
 }

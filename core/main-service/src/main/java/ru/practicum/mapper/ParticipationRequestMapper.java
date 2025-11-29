@@ -18,7 +18,7 @@ public final class ParticipationRequestMapper {
         return new ParticipationRequestDto(
                 request.getId(),
                 request.getEvent().getId(),
-                request.getRequester().getId(),
+                request.getRequester(),
                 request.getStatus(),
                 request.getCreated()
         );

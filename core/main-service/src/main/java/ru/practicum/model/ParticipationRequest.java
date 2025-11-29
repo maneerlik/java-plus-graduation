@@ -60,9 +60,8 @@ public class ParticipationRequest {
     private Event event;
 
     @ToString.Exclude
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requester_id", nullable = false)
-    private User requester;
+    @Column(name = "requester_id", nullable = false)
+    private Long requester;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

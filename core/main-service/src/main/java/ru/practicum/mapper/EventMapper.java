@@ -3,11 +3,11 @@ package ru.practicum.mapper;
 import ru.practicum.dto.event.EventFullDto;
 import ru.practicum.dto.event.EventShortDto;
 import ru.practicum.dto.event.NewEventDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.enums.EventState;
 import ru.practicum.model.Category;
 import ru.practicum.model.Event;
 import ru.practicum.model.Location;
-import ru.practicum.model.User;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -20,7 +20,7 @@ public final class EventMapper {
 
     }
 
-    public static Event toEvent(NewEventDto dto, Category category, User user, Location location) {
+    public static Event toEvent(NewEventDto dto, Category category, UserDto user, Location location) {
         if (dto == null) {
             return null;
         }
@@ -34,7 +34,7 @@ public final class EventMapper {
                 .paid(dto.getPaid())
                 .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0)
                 .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : true)
-                .initiator(user)
+                .initiator(user.getId())
                 .state(EventState.PENDING)
                 .createdOn(LocalDateTime.now())
                 .publishedOn(null)
@@ -52,7 +52,7 @@ public final class EventMapper {
                 event.getAnnotation(),
                 CategoryMapper.toCategoryDto(event.getCategory()),
                 event.getEventDate(),
-                UserMapper.toShortDto(event.getInitiator()),
+                event.getInitiator(),
                 event.getPaid(),
                 event.getTitle(),
                 event.getViews(),
@@ -91,7 +91,7 @@ public final class EventMapper {
                 event.getCreatedOn(),
                 event.getDescription(),
                 event.getEventDate(),
-                UserMapper.toShortDto(event.getInitiator()),
+                event.getInitiator(),
                 LocationMapper.toLocationDto(event.getLocation()),
                 event.getPaid(),
                 event.getParticipantLimit(),

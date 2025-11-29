@@ -40,9 +40,8 @@ public class Event {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
-    @ManyToOne
-    @JoinColumn(name = "initiator_id", nullable = false)
-    private User initiator;
+    @Column(name = "initiator_id", nullable = false)
+    private Long initiator;
 
     @OneToOne(cascade = {CascadeType.ALL})
     @JoinColumn(name = "location_id", nullable = false)

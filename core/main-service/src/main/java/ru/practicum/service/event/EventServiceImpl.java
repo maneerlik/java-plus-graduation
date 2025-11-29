@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.HitDto;
 import ru.practicum.StatsClient;
 import ru.practicum.ViewStatsDto;
+import ru.practicum.contract.UserClient;
 import ru.practicum.dto.event.*;
 import ru.practicum.dto.location.LocationDto;
+import ru.practicum.dto.user.UserDto;
 import ru.practicum.enums.*;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
@@ -25,13 +27,13 @@ import ru.practicum.mapper.LocationMapper;
 import ru.practicum.model.Category;
 import ru.practicum.model.Event;
 import ru.practicum.model.Location;
-import ru.practicum.model.User;
 import ru.practicum.repository.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +45,7 @@ public class EventServiceImpl implements EventService {
     private String appName;
 
     private final EventRepository eventRepository;
-    private final UserRepository userRepository;
+    private final UserClient userClient;
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
     private final ParticipationRequestRepository requestRepository;
@@ -56,25 +58,25 @@ public class EventServiceImpl implements EventService {
     public EventFullDto createEvent(NewEventDto newEventDto, Long userId) {
         validateEventDate(newEventDto.getEventDate(), 1);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с ID=" + userId + " не найден."));
+        Optional<UserDto> userDto = findUserById(userId);
+        if (userDto.isEmpty()) new NotFoundException("Пользователь с ID=" + userId + " не найден.");
+
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException("Категория с ID=" + newEventDto.getCategory() + " не найдена."));
 
         Location location = getLocation(newEventDto.getLocation());
-
-        Event event = EventMapper.toEvent(newEventDto, category, user, location);
+        Event event = EventMapper.toEvent(newEventDto, category, userDto.get(), location);
 
         return EventMapper.toFullEventDto(eventRepository.save(event));
     }
 
     @Override
     public List<EventShortDto> getEvents(Long userId, Integer from, Integer size) {
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("Пользователь с ID=" + userId + " не найден.");
-        }
+        Optional<UserDto> userDto = findUserById(userId);
+        if (userDto.isEmpty()) throw new NotFoundException("Пользователь с ID=" + userId + " не найден.");
+
         Pageable page = PageRequest.of(from / size, size);
-        List<Event> events = eventRepository.findAllByInitiatorId(userId, page);
+        List<Event> events = eventRepository.findAllByInitiator(userId, page);
 
         return EventMapper.toEventShortDtoList(events);
     }
@@ -161,7 +163,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
-        Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
+        Event event = eventRepository.findByIdAndInitiator(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие с ID=" + eventId + " и инициатором ID=" + userId + " не найдено."));
 
         if (event.getState() == EventState.PUBLISHED) {
@@ -305,6 +307,7 @@ public class EventServiceImpl implements EventService {
         if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
             throw new ValidationException("Дата начала не может быть позже даты окончания.");
         }
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> query = cb.createQuery(Event.class);
         Root<Event> eventRoot = query.from(Event.class);
@@ -312,7 +315,7 @@ public class EventServiceImpl implements EventService {
         List<Predicate> predicates = new ArrayList<>();
 
         if (users != null && !users.isEmpty()) {
-            predicates.add(eventRoot.get("initiator").get("id").in(users));
+            predicates.add(eventRoot.get("initiator").in(users));
         }
 
         if (states != null && !states.isEmpty()) {
@@ -459,7 +462,7 @@ public class EventServiceImpl implements EventService {
         List<Predicate> predicates = new ArrayList<>();
 
         if (users != null && !users.isEmpty()) {
-            predicates.add(root.get("initiator").get("id").in(users));
+            predicates.add(root.get("initiator").in(users));
         }
         if (states != null && !states.isEmpty()) {
             predicates.add(root.get("state").in(states));
@@ -485,7 +488,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private Event findEventByIdAndInitiatorId(Long eventId, Long userId) {
-        return eventRepository.findByIdAndInitiatorId(eventId, userId)
+        return eventRepository.findByIdAndInitiator(eventId, userId)
                 .orElseThrow(() -> new NotFoundException(
                         String.format("Событие с ID=%d и инициатором ID=%d не найдено.", eventId, userId)
                 ));
@@ -533,5 +536,10 @@ public class EventServiceImpl implements EventService {
         }
 
         return predicates;
+    }
+
+    private Optional<UserDto> findUserById(Long userId) {
+        List<UserDto> userDtos = userClient.getUsers(List.of(userId));
+        return userDtos.isEmpty() ? Optional.empty() : Optional.of(userDtos.getFirst());
     }
 }
