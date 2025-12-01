@@ -9,10 +9,15 @@ spring:
           predicates:
             - Path=/admin/users/**        # Сначала специфичные пути
 
-        - id: main_service_route          # Идентификатор роута
-          uri: lb://main-service          # Путь, куда роут будет перенаправлять запрос. Префикс lb означает, что Gateway
+        - id: request_service_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests/**
+
+        - id: event_service_route         # Идентификатор роута
+          uri: lb://event-service         # Путь, куда роут будет перенаправлять запрос. Префикс lb означает, что Gateway
                                           # с помощью DiscoveryClient и встроенного балансировщика нагрузки найдёт
-                                          # экземпляр сервиса с идентификатором main-service. Можно не использовать lb,
+                                          # экземпляр сервиса с идентификатором event-service. Можно не использовать lb,
                                           # а сразу указать конкретный адрес сервиса н.п.: http://localhost:8081
 
           predicates:                     # Условия, по которым определяется, должен ли роут обрабатывать запрос. Лямбда

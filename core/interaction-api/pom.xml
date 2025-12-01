@@ -25,12 +25,6 @@
             <scope>provided</scope>
         </dependency>
 
-<!--        &lt;!&ndash; Core Spring Data library, providing common abstractions used all Spring Data modules (repositories, pagination, sorting, ...) &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.data</groupId>-->
-<!--            <artifactId>spring-data-commons</artifactId>-->
-<!--        </dependency>-->
-
         <!-- jackson.core -->
         <dependency>
             <groupId>tools.jackson.core</groupId>
@@ -38,10 +32,14 @@
             <version>3.0.2</version>
         </dependency>
 
-        <!-- Feign-client -->
+        <!-- Feign client starter for Spring Cloud (@FeignClient, integration with Spring, Eureka) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-okhttp</artifactId>
         </dependency>
     </dependencies>
 </project>

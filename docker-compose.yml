@@ -44,7 +44,7 @@ services:
       retries: 3                          # сделать до 3 попыток, прежде чем считать сервис "нездоровым"
     restart: unless-stopped               # перезапускать, если контейнер не был остановлен вручную
     networks:
-      - app-network                       # контейнер должен быть подключен к с именем app-network
+      - app-network                       # контейнер должен быть подключен к сети с именем app-network
     profiles:                             # запуск по профилю 'docker compose --profile default up -d'
       - default                           # дефолтный профиль db и discovery остальное запускается на руках (для прямого обращения чз localhost:port - для отладки)
       - docker                            # профиль для запуска в docker
@@ -67,9 +67,9 @@ services:
     profiles:
       - docker
 
-  # 3. Main Service
-  main-service:
-    image: main-service:latest
+  # 3. Event Service
+  event-service:
+    image: event-service:latest
     deploy:
       restart_policy:
         condition: on-failure             # перезапускать контейнер только если он завершился с ненулевым кодом (упал с ошибкой)
@@ -77,7 +77,7 @@ services:
         max_attempts: 3                   # максимум 3 попытки перезапуска
         window: 120s                      # временное окно, в течение которого считаются попытки. Если за 120 секунд было 3 падения, Docker перестанет пытаться перезапускать контейнер
     build:
-      context: ./core/main-service
+      context: ./core/event-service
       dockerfile: Dockerfile
     ports:
       - "5005:5005"                       # порт для дебага
@@ -94,7 +94,7 @@ services:
                                           # Позволяет подключить IDE к работающему контейнеру и ставить breakpoints, как будто
                                           # приложение запущено локально.
                                           # -Duser.timezone - устанавливает часовой пояс по умолчанию для всего приложения
-      SPRING_PROFILES_ACTIVE: docker      # пометить, чтобы Spring Boot использовал конфиг 'docker' н.п. main-service-docker.yml
+      SPRING_PROFILES_ACTIVE: docker      # пометить, чтобы Spring Boot использовал конфиг 'docker' н.п. event-service-docker.yml
       JAVA_OPTS: >
         -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
         -Duser.timezone=Europe/Moscow
@@ -136,7 +136,39 @@ services:
     profiles:
       - docker
 
-  # 5. Stats Server
+  # 5. Request Service
+  request-service:
+    image: request-service:latest
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    build:
+      context: ./core/request-service
+      dockerfile: Dockerfile
+    ports:
+      - "5008:5005"                       # порт для дебага
+    depends_on:
+      db:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: >
+        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
+        -Duser.timezone=Europe/Moscow
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    networks:
+      - app-network
+    profiles:
+      - docker
+
+  # 6. Stats Server
   stats-server:
     image: stats-server:latest
     deploy:
@@ -168,7 +200,7 @@ services:
     profiles:
       - docker
 
-  # 6. Gateway Server
+  # 7. Gateway Server
   gateway-server:
     image: gateway-server:latest
     deploy:

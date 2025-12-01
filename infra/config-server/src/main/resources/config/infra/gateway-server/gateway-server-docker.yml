@@ -8,8 +8,18 @@ spring:
           predicates:
             - Path=/admin/users/**
 
-        - id: main_service_route
-          uri: lb://main-service
+        - id: request_service_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests/**
+
+        - id: stats_server_route
+          uri: lb://stats-server
+          predicates:
+            - Path=/stats,/hit
+
+        - id: event_service_route
+          uri: lb://event-service
           predicates:
             - Path=/**
 
