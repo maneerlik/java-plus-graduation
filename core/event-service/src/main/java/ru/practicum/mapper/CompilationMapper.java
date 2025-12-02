@@ -6,18 +6,26 @@ import ru.practicum.model.Compilation;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CompilationMapper {
+public final class CompilationMapper {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private CompilationMapper() {
+
+    }
+
     public static CompilationDto toCompilationDto(Compilation compilation, Map<Long, Long> confirmedRequestsCounts) {
-        if (compilation == null) {
-            return null;
-        }
+        if (Objects.isNull(compilation)) return null;
+
         Set<EventShortDto> eventShortDtos = Collections.emptySet();
-        if (compilation.getEvents() != null && !compilation.getEvents().isEmpty()) {
+
+        if (Objects.nonNull(compilation.getEvents()) && !compilation.getEvents().isEmpty()) {
             eventShortDtos = compilation.getEvents().stream()
-                    .map(event -> EventMapper.toEventShortDto(event))
+                    .map(EventMapper::toEventShortDto)
                     .collect(Collectors.toSet());
         }
 

@@ -22,7 +22,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Optional<Event> findByIdAndState(Long eventId, EventState state);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE Event e SET e.views = e.views + 1 WHERE e.id = :eventId")
+    @Query("""
+            UPDATE Event e
+            SET e.views = e.views + 1
+            WHERE e.id = :eventId
+            """)
     void incrementViews(@Param("eventId") Long eventId);
 
     boolean existsByCategoryId(Long categoryId);

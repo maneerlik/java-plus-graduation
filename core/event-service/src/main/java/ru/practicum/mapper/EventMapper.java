@@ -12,18 +12,21 @@ import ru.practicum.model.Location;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class EventMapper {
+    /**
+     * Don't let anyone instantiate this class.
+     */
     private EventMapper() {
 
     }
 
     public static Event toEvent(NewEventDto dto, Category category, UserDto user, Location location) {
-        if (dto == null) {
-            return null;
-        }
+        if (Objects.isNull(dto)) return null;
+
         return Event.builder()
                 .annotation(dto.getAnnotation())
                 .category(category)
@@ -44,9 +47,8 @@ public final class EventMapper {
     }
 
     public static EventShortDto toEventShortDto(Event event) {
-        if (event == null) {
-            return null;
-        }
+        if (Objects.isNull(event)) return null;
+
         return new EventShortDto(
                 event.getId(),
                 event.getAnnotation(),
@@ -62,27 +64,24 @@ public final class EventMapper {
     }
 
     public static Set<EventShortDto> toEventShortDtoSet(Set<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return Collections.emptySet();
-        }
+        if (Objects.isNull(events) || events.isEmpty()) return Collections.emptySet();
+
         return events.stream()
                 .map(EventMapper::toEventShortDto)
                 .collect(Collectors.toSet());
     }
 
     public static List<EventShortDto> toEventShortDtoList(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (Objects.isNull(events) || events.isEmpty()) return Collections.emptyList();
+
         return events.stream()
                 .map(EventMapper::toEventShortDto)
                 .collect(Collectors.toList());
     }
 
     public static EventFullDto toFullEventDto(Event event, long confirmedRequestsCount) {
-        if (event == null) {
-            return null;
-        }
+        if (Objects.isNull(event)) return null;
+
         return new EventFullDto(
                 event.getId(),
                 event.getAnnotation(),
@@ -104,16 +103,15 @@ public final class EventMapper {
     }
 
     public static EventFullDto toFullEventDto(Event event) {
-        if (event == null) {
-            return null;
-        }
-        return toFullEventDto(event, event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
+        if (Objects.isNull(event)) return null;
+        return toFullEventDto(event, Objects.nonNull(event.getConfirmedRequests())
+                ? event.getConfirmedRequests()
+                : 0L
+        );
     }
 
     public static List<EventFullDto> toEventFullDtoList(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (Objects.isNull(events) || events.isEmpty()) return Collections.emptyList();
 
         return events.stream()
                 .map(EventMapper::toFullEventDto)

@@ -20,9 +20,11 @@ public class Compilation {
     private Long id;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "compilation_events",
+    @JoinTable(
+            name = "compilation_events",
             joinColumns = @JoinColumn(name = "compilation_id"),
-            inverseJoinColumns = @JoinColumn(name = "event_id"))
+            inverseJoinColumns = @JoinColumn(name = "event_id")
+    )
     private Set<Event> events;
 
     @Column(name = "pinned", nullable = false)

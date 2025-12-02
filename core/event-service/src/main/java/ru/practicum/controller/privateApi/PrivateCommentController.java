@@ -20,9 +20,11 @@ public class PrivateCommentController {
 
     @PostMapping("/events/{eventId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentDto addComment(@PathVariable Long userId,
-                                 @PathVariable Long eventId,
-                                 @RequestBody @Valid NewCommentDto newCommentDto) {
+    public CommentDto addComment(
+            @PathVariable Long userId,
+            @PathVariable Long eventId,
+            @RequestBody @Valid NewCommentDto newCommentDto
+    ) {
         return commentService.addComment(userId, eventId, newCommentDto);
     }
 
@@ -33,8 +35,10 @@ public class PrivateCommentController {
 
     @DeleteMapping("/comments/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@PathVariable Long userId,
-                              @PathVariable Long commentId) {
+    public void deleteComment(
+            @PathVariable Long userId,
+            @PathVariable Long commentId
+    ) {
         commentService.deleteComment(userId, commentId);
     }
 }

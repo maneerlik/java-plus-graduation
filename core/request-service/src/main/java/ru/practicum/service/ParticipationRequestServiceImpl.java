@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
-
     private final ParticipationRequestRepository requestRepository;
     private final UserClient userClient;
     private final EventClient eventClient;
@@ -42,7 +41,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
         if (requestRepository.existsByEventAndRequester(eventId, userId)) {
             throw new ConflictException(String.format(
-                            "Запрос от пользователя %s на событие %d уже существует", userId, eventId
+                    "Запрос от пользователя %s на событие %d уже существует", userId, eventId
             ));
         }
 

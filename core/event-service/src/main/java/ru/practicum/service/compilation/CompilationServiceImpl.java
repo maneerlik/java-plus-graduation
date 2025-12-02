@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CompilationServiceImpl implements CompilationService {
-
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final ParticipationRequestClient participationRequestClient;
@@ -32,8 +31,10 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto createCompilation(NewCompilationDto newDto) {
         Set<Long> eventIds = newDto.getEvents();
         Set<Event> events = new HashSet<>();
+
         if (eventIds != null && !eventIds.isEmpty()) {
             events.addAll(eventRepository.findAllById(eventIds));
+
             if (events.size() != eventIds.size()) {
                 throw new NotFoundException("Одно или несколько событий из списка не найдены.");
             }
@@ -57,6 +58,7 @@ public class CompilationServiceImpl implements CompilationService {
         if (!compilationRepository.existsById(compId)) {
             throw new NotFoundException("Подборка с ID=" + compId + " не найдена.");
         }
+
         compilationRepository.deleteById(compId);
     }
 
@@ -94,6 +96,7 @@ public class CompilationServiceImpl implements CompilationService {
     public List<CompilationDto> getAllCompilations(Boolean pinned, int from, int size) {
         PageRequest page = PageRequest.of(from / size, size);
         List<Compilation> compilations;
+
         if (pinned != null) {
             compilations = compilationRepository.findAllByPinned(pinned, page).getContent();
         } else {

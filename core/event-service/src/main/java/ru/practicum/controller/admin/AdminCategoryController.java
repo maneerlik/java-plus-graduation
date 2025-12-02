@@ -14,7 +14,6 @@ import ru.practicum.service.category.CategoryService;
 public class AdminCategoryController {
     private final CategoryService categoryService;
 
-
     @PostMapping("/admin/categories")
     public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody NewCategoryDto newCategoryDto) {
         CategoryDto createdCategory = categoryService.createCategory(newCategoryDto);
@@ -28,8 +27,10 @@ public class AdminCategoryController {
     }
 
     @PatchMapping("/admin/categories/{catId}")
-    public ResponseEntity<CategoryDto> updateCategory(@PathVariable Long catId,
-                                                      @Valid @RequestBody NewCategoryDto newCategoryDto) {
+    public ResponseEntity<CategoryDto> updateCategory(
+            @PathVariable Long catId,
+            @Valid @RequestBody NewCategoryDto newCategoryDto
+    ) {
         CategoryDto updatedCategory = categoryService.updateCategory(catId, newCategoryDto);
         return ResponseEntity.ok(updatedCategory);
     }

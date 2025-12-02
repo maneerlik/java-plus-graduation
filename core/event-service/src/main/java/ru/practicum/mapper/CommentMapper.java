@@ -4,7 +4,13 @@ import ru.practicum.dto.comment.CommentDto;
 import ru.practicum.dto.comment.NewCommentDto;
 import ru.practicum.model.Comment;
 
-public class CommentMapper {
+public final class CommentMapper {
+    /**
+     * Don't let anyone instantiate this class.
+     */
+    private CommentMapper() {
+
+    }
 
     public static CommentDto toCommentDto(Comment comment) {
         return CommentDto.builder()

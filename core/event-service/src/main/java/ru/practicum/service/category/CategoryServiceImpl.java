@@ -44,9 +44,11 @@ public class CategoryServiceImpl implements CategoryService {
         if (!categoryRepository.existsById(catId)) {
             throw new NotFoundException("Категория с ID=" + catId + " не найдена.");
         }
+
         if (eventRepository.existsByCategoryId(catId)) {
             throw new ConflictException("Нельзя удалить категорию, с которой связаны события.");
         }
+
         categoryRepository.deleteById(catId);
     }
 
@@ -75,6 +77,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<CategoryDto> getAllCategories(int from, int size) {
         PageRequest page = PageRequest.of(from / size, size);
+
         return categoryRepository.findAll(page).stream()
                 .map(CategoryMapper::toCategoryDto)
                 .collect(Collectors.toList());
@@ -84,6 +87,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto getCategoryById(Long catId) {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с ID=" + catId + " не найдена."));
+
         return CategoryMapper.toCategoryDto(category);
     }
 }

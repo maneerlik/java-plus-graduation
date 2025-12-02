@@ -17,7 +17,6 @@ import ru.practicum.service.compilation.CompilationService;
 public class AdminCompilationController {
     private final CompilationService compilationService;
 
-
     @PostMapping("/admin/compilations")
     public ResponseEntity<CompilationDto> createCompilation(@Valid @RequestBody NewCompilationDto newDto) {
         log.info("ADMIN: creating compilation with data: {}", newDto);

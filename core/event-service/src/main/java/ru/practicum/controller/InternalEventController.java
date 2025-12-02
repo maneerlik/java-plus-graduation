@@ -28,4 +28,3 @@ public class InternalEventController {
         eventService.updateConfirmedRequests(eventId, confirmedRequests);
     }
 }
-

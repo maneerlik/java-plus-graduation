@@ -4,16 +4,19 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.model.ParticipationRequest;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public final class ParticipationRequestMapper {
+    /**
+     * Don't let anyone instantiate this class.
+     */
     private ParticipationRequestMapper() {
+
     }
 
     public static ParticipationRequestDto toParticipationRequestDto(ParticipationRequest request) {
-        if (request == null) {
-            return null;
-        }
+        if (Objects.isNull(request)) return null;
 
         return new ParticipationRequestDto(
                 request.getId(),

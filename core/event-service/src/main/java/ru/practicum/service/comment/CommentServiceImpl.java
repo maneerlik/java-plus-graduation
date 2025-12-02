@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CommentServiceImpl implements CommentService {
-
     private final CommentRepository commentRepository;
     private final UserClient userClient;
     private final EventRepository eventRepository;
@@ -66,8 +65,11 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException("Комментарий с id=" + commentId + " не найден"));
 
         if (!comment.getAuthor().equals(userId)) {
-            throw new ValidationException("Пользователь с id=" + userId + " не является автором комментария с id=" + commentId);
+            throw new ValidationException(String.format(
+                    "Пользователь с id=%d не является автором комментария с id=%d", userId, commentId)
+            );
         }
+
         commentRepository.delete(comment);
     }
 

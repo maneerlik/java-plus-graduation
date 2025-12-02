@@ -24,7 +24,6 @@ import java.util.List;
 public class PublicEventController {
     private final EventService eventService;
 
-
     @GetMapping
     public List<EventShortDto> getEventsWithParamsByUser(
             @RequestParam(required = false) String text,
@@ -38,7 +37,9 @@ public class PublicEventController {
             @RequestParam(defaultValue = "10") @Positive Integer size,
             HttpServletRequest request
     ) {
-        return eventService.getEventsByUser(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, request);
+        return eventService.getEventsByUser(
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, request
+        );
     }
 
     @GetMapping("/{id}")

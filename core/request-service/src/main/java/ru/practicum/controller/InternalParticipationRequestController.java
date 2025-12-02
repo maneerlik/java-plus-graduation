@@ -9,7 +9,9 @@ import ru.practicum.dto.request.ParticipationRequestDto;
 import ru.practicum.enums.RequestStatus;
 import ru.practicum.service.ParticipationRequestService;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController

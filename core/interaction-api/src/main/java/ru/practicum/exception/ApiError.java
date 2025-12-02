@@ -24,11 +24,9 @@ public class ApiError {
         this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
-
     public static Builder builder(HttpStatus status, String reason) {
         return new Builder(status, reason);
     }
-
 
     public static class Builder {
         private String errors;
