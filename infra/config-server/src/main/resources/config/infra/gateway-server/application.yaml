@@ -3,16 +3,28 @@ spring:
     gateway:
       discovery.locator.enabled: true     # Gateway для своей работы должен использовать Discovery Service
 
-      routes:
-        - id: main_service_route          # Идентификатор роута
-          uri: lb://main-service          # Путь, куда роут будет перенаправлять запрос. Префикс lb означает, что Gateway
-                                          # с помощью DiscoveryClient и встроенного балансировщика нагрузки найдёт
-                                          # экземпляр сервиса с идентификатором main-service. Можно не использовать lb,
-                                          # а сразу указать конкретный адрес сервиса н.п.: http://localhost:8081
+      routes:                             # Spring Cloud Gateway обрабатывает роуты в порядке их объявления (если не задан явный order)
+        - id: user_service_route
+          uri: lb://user-service
           predicates:
-            - Path=/**                    # Условия, по которым определяется, должен ли роут обрабатывать запрос. Лямбда
+            - Path=/admin/users/**        # Сначала специфичные пути
+
+        - id: request_service_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests/**
+
+        - id: event_service_route         # Идентификатор роута
+          uri: lb://event-service         # Путь, куда роут будет перенаправлять запрос. Префикс lb означает, что Gateway
+                                          # с помощью DiscoveryClient и встроенного балансировщика нагрузки найдёт
+                                          # экземпляр сервиса с идентификатором event-service. Можно не использовать lb,
+                                          # а сразу указать конкретный адрес сервиса н.п.: http://localhost:8081
+
+          predicates:                     # Условия, по которым определяется, должен ли роут обрабатывать запрос. Лямбда
                                           # типа 'предикат' (у которой один входной аргумент, а возвращает она true или false)
                                           # https://docs.spring.io/spring-cloud-gateway/docs/current/reference/html/#gateway-request-predicates-factories
+
+            - Path=/**                    # Затем - общие
 
 management:
   endpoints:
