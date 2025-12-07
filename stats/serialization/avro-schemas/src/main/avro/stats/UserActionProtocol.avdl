@@ -1,0 +1,31 @@
+/**
+ * Протокол пользовательских действий
+ *
+ * Определяет структуру событий, фиксирующих действия пользователей
+ */
+@namespace("ru.practicum.ewm.stats.avro")
+protocol UserActionProtocol {
+	/**
+     * Тип действия пользователя
+     */
+	enum ActionTypeAvro {
+		VIEW,			// просмотр страницы мероприятия
+		REGISTER,		// заявка на участие в мероприятии
+		LIKE			// положительная оценка/лайк мероприятию
+	}
+
+	/**
+     * Действие пользователя
+     *
+     * @param user_id идентификатор пользователя, совершившего действие
+     * @param event_id идентификатор мероприятия, с которым связано действие
+     * @param action_type тип действия пользователя
+     * @param timestamp временная метка, указывающая время действия
+     */
+	record UserActionAvro {
+		long user_id;
+		long event_id;
+		ActionTypeAvro action_type;
+		timestamp_ms timestamp;
+	}
+}

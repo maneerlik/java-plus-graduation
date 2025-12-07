@@ -1,4 +1,51 @@
 services:
+  kafka:
+    image: confluentinc/confluent-local:7.4.3
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"                       # Внешний доступ для клиентов с хоста
+      - "9101:9101"                       # JMX-мониторинг
+    restart: unless-stopped
+    environment:
+      # Идентификаторы
+      KAFKA_NODE_ID: 1
+      CLUSTER_ID: "K0EA9p0yEe6MkAAAAkKsEg"
+
+      # Роли Kafka (для KRaft mode)
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+
+      # Слушатели: внутренние и внешние
+      KAFKA_LISTENERS: >-                 # >- склеивает всё в одну строку без переносов, но сохраняет запятые и пробелы
+        PLAINTEXT://kafka:29092,
+        CONTROLLER://kafka:29093,
+        PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: >-
+        PLAINTEXT://kafka:29092,
+        PLAINTEXT_HOST://localhost:9092
+
+      # JMX
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+    profiles:
+      - default
+      - docker
+
+  kafka-init-topics:
+    image: confluentinc/confluent-local:7.4.3
+    container_name: kafka-init-topics
+    depends_on:
+      - kafka
+    command: >-
+      bash -c "
+        kafka-topics --create --topic stats.user-actions.v1 --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29090 &&
+        kafka-topics --create --topic stats.events-similarity.v1 --partitions 1 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29090
+      "
+    init: true
+    profiles:
+      - default
+      - docker
 
   # 0. DBs
   db:
