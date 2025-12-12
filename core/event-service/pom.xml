@@ -79,6 +79,12 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
+        <!-- gRPC client -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-client-spring-boot-starter</artifactId>
+        </dependency>
+
         <!-- Local dependencies -->
         <dependency>
             <groupId>ru.practicum</groupId>

@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-tables
+      author: smirnovs
+      changes:
+        - sqlFile:
+            path: changes/001-create-tables.sql
+            relativeToChangelogFile: true     # Путь считается от расположения db.changelog-master.yaml
+            stripComments: true               # Удалять SQL-комментарии (избежать ошибок парсинга, < объем передаваемого SQL, избежать конфликтов с splitStatements - ';' в комментариях не распознаются как конец statement'а)
+            splitStatements: false            # Отключает разбиение SQL по ';', чтобы функция выполнялась целиком

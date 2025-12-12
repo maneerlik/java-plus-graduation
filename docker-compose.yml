@@ -215,39 +215,7 @@ services:
     profiles:
       - docker
 
-  # 6. Stats Server
-  stats-server:
-    image: stats-server:latest
-    deploy:
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-    build:
-      context: ./stats/stats-server
-      dockerfile: Dockerfile
-    ports:
-      - "5006:5005"                       # порт для дебага
-    depends_on:
-      db:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
-      config-server:
-        condition: service_started
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      JAVA_OPTS: >
-        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 
-        -Duser.timezone=Europe/Moscow
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-    networks:
-      - app-network
-    profiles:
-      - docker
-
-  # 7. Gateway Server
+  # 6. Gateway Server
   gateway-server:
     image: gateway-server:latest
     deploy:
