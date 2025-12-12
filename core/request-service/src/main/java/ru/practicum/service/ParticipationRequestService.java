@@ -30,4 +30,6 @@ public interface ParticipationRequestService {
 
     @Transactional
     ParticipationRequestDto cancelRequest(Long userId, Long requestId);
+
+    boolean isUserParticipant(Long userId, Long eventId);
 }

@@ -25,6 +25,16 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
     List<ParticipationRequest> findAllByIdIn(List<Long> requestIds);
 
     @Query("""
+            SELECT
+            CASE WHEN COUNT(r) > 0 THEN TRUE ELSE FALSE END 
+            FROM ParticipationRequest r 
+            WHERE r.requester = :requesterId 
+            AND r.event = :eventId 
+            AND r.status = 'CONFIRMED'
+            """)
+    boolean isUserParticipant(Long requesterId, Long eventId);
+
+    @Query("""
             SELECT r.event, COUNT(r.id)
             FROM ParticipationRequest r
             WHERE r.event IN :eventIds
