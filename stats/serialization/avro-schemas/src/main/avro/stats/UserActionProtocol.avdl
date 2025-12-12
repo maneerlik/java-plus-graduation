@@ -17,15 +17,15 @@ protocol UserActionProtocol {
 	/**
      * Действие пользователя
      *
-     * @param user_id идентификатор пользователя, совершившего действие
-     * @param event_id идентификатор мероприятия, с которым связано действие
-     * @param action_type тип действия пользователя
+     * @param userId идентификатор пользователя, совершившего действие
+     * @param eventId идентификатор мероприятия, с которым связано действие
+     * @param actionType тип действия пользователя
      * @param timestamp временная метка, указывающая время действия
      */
 	record UserActionAvro {
-		long user_id;
-		long event_id;
-		ActionTypeAvro action_type;
+		long userId;
+		long eventId;
+		ActionTypeAvro actionType;
 		timestamp_ms timestamp;
 	}
 }
